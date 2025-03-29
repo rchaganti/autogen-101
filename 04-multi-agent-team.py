@@ -7,11 +7,21 @@ from autogen_agentchat.teams import RoundRobinGroupChat
 from autogen_agentchat.ui import Console
 from autogen_core import CancellationToken
 from autogen_ext.models.openai import AzureOpenAIChatCompletionClient
+import random
+from sympy import isprime
 
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
+
+def generate_number(start: int, end: int) -> int:
+    """Generate a random number."""
+    return random.randint(start,end)
+
+def check_is_prime_number(number: int) -> bool:
+    """check if the random number is a prime."""
+    return isprime(number)
 
 async def main():
     api_key = os.getenv("AZURE_OPENAI_API_KEY")
@@ -25,29 +35,36 @@ async def main():
         api_version=api_version,
     )
 
-    # Create the primary agent.
-    primary_agent = AssistantAgent(
-        "primary",
+    generator_agent = AssistantAgent(
+        "generator",
+        description="An agent that generates random numbers.",
         model_client=model_client,
-        system_message="You are a helpful AI assistant.",
+        tools=[generate_number],
+        system_message="""
+        You are a numbers wizard. Use the tools to generate random number.
+        Maintain a list of generated numbers. If a new number is generated, check if it is already in the list.
+        If it is, generate a new number. If it is not, add it to the list and return the number.
+        """,
     )
 
-    # Create the critic agent.
-    critic_agent = AssistantAgent(
-        "critic",
+    verifier_agent = AssistantAgent(
+        "verifier",
+        description="An agent that verifies if a number is prime.",
         model_client=model_client,
-        system_message="Provide constructive feedback. Respond with 'APPROVE' to when your feedback is addressed.",
+        tools=[check_is_prime_number],
+        system_message=""""
+            You are a powerful calculator, use the tools to verify if a number is prime number.
+            Skip already verified numbers.
+            Respond with DONE when all required prime numbers are found and return all prime numbers you found."
+        """
     )
 
-    # Define a termination condition that stops the task if the critic approves.
-    text_termination = TextMentionTermination("APPROVE")
+    text_termination = TextMentionTermination("DONE")
 
-    # Create a team with the primary and critic agents.
-    team = RoundRobinGroupChat([primary_agent, critic_agent], termination_condition=text_termination)
+    team = RoundRobinGroupChat([generator_agent, verifier_agent], termination_condition=text_termination)
 
-    # When running inside a script, use a async main function and call it from `asyncio.run(...)`.
-    await team.reset()  # Reset the team for a new task.
-    await Console(team.run_stream(task="Write a short poem about Jagadguru Shankaracharya Sri Sri Sri Shankara Vijayendra Saraswati Swami."))
+    await team.reset()
+    await Console(team.run_stream(task="Find 5 random prime numbers between 1 and 15."))
 
 result = asyncio.run(main())
 print(result)
