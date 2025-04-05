@@ -10,6 +10,7 @@ import requests
 from datetime import datetime
 
 from typing import Any
+from autogen_core.models import ModelInfo
 
 load_dotenv()
 
@@ -17,11 +18,22 @@ api_key = os.getenv("AZURE_OPENAI_API_KEY")
 model = os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT_NAME")
 endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
 api_version = os.getenv("AZURE_OPENAI_API_VERSION")
+
+model_info = ModelInfo(
+    vision=False,
+    structured_output=False,
+    function_calling=True,
+    streaming=False,
+    json_output=False,
+    family="gpt-4o",
+)
+
 aoi_client = AzureOpenAIChatCompletionClient(
     model=model,
     api_key=api_key,
     endpoint=endpoint,
     api_version=api_version,
+    model_info=model_info,
 )
 
 def get_weather(city: str, date: datetime = None) -> dict[str, Any]:

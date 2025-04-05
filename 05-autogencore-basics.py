@@ -57,13 +57,13 @@ async def main():
     await Generator.register(
         runtime,
         "generator",
-        lambda: Generator(generate_val=lambda: random.randint(1, 1000)),
+        lambda: Generator(generate_val=lambda: random.randint(1, 15)),
     )
 
     await Checker.register(
         runtime,
         "checker",
-        lambda: Checker(run_until=lambda count: count >= 10),
+        lambda: Checker(run_until=lambda count: count >= 5),
     )
 
     runtime.start()

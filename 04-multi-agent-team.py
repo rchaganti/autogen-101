@@ -5,8 +5,8 @@ from autogen_agentchat.base import TaskResult
 from autogen_agentchat.conditions import ExternalTermination, TextMentionTermination
 from autogen_agentchat.teams import RoundRobinGroupChat
 from autogen_agentchat.ui import Console
-from autogen_core import CancellationToken
 from autogen_ext.models.openai import AzureOpenAIChatCompletionClient
+from autogen_core.models import ModelInfo
 import random
 from sympy import isprime
 
@@ -28,11 +28,21 @@ async def main():
     model = os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT_NAME")
     endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
     api_version = os.getenv("AZURE_OPENAI_API_VERSION")
+    model_info = ModelInfo(
+        vision=False,
+        structured_output=False,
+        function_calling=True,
+        streaming=False,
+        json_output=False,
+        family="gpt-4o",
+    )
+
     model_client = AzureOpenAIChatCompletionClient(
         model=model,
         api_key=api_key,
         endpoint=endpoint,
         api_version=api_version,
+        model_info=model_info,
     )
 
     generator_agent = AssistantAgent(
